@@ -1,0 +1,9 @@
+node_modules/
+main.js
+main.js.map
+data.json
+.DS_Store
+
+# notes is a symlink to the user's personal Obsidian vault used as a test target
+notes
+notes/

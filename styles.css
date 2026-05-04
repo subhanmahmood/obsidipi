@@ -32,10 +32,115 @@
 }
 
 .obsidipi-assistant {
+	position: relative;
 	align-self: flex-start;
 	background: var(--background-secondary);
 	color: var(--text-normal);
 	max-width: 95%;
+	padding-right: 32px;
+}
+
+.obsidipi-copy {
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	padding: 4px;
+	width: 24px;
+	height: 24px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: var(--text-muted);
+	opacity: 0.6;
+	transition: opacity 80ms ease;
+}
+
+.obsidipi-copy:hover {
+	opacity: 1;
+	color: var(--text-normal);
+}
+
+.obsidipi-copy .svg-icon {
+	width: 14px;
+	height: 14px;
+}
+
+.obsidipi-assistant-content > * {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.obsidipi-assistant-content > :first-child {
+	margin-top: 0;
+}
+
+.obsidipi-assistant-content > :last-child {
+	margin-bottom: 0;
+}
+
+.obsidipi-assistant-content h1,
+.obsidipi-assistant-content h2,
+.obsidipi-assistant-content h3,
+.obsidipi-assistant-content h4 {
+	margin-top: 0.8em;
+	margin-bottom: 0.3em;
+}
+
+.obsidipi-assistant-content ul,
+.obsidipi-assistant-content ol {
+	padding-left: 1.4em;
+}
+
+.obsidipi-assistant-content li {
+	margin: 0.1em 0;
+}
+
+.obsidipi-assistant-content table {
+	display: table;
+	width: max-content;
+	max-width: 100%;
+	border-collapse: collapse;
+	font-size: 0.9em;
+}
+
+.obsidipi-assistant-content thead,
+.obsidipi-assistant-content tbody,
+.obsidipi-assistant-content tr {
+	display: table-row-group;
+}
+
+.obsidipi-assistant-content thead {
+	display: table-header-group;
+}
+
+.obsidipi-assistant-content tr {
+	display: table-row;
+}
+
+.obsidipi-assistant-content th,
+.obsidipi-assistant-content td {
+	display: table-cell;
+	padding: 4px 8px;
+	border: 1px solid var(--background-modifier-border);
+	vertical-align: top;
+}
+
+.obsidipi-assistant-content {
+	overflow-x: auto;
+}
+
+.obsidipi-assistant-content pre {
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.obsidipi-assistant-content img {
+	max-width: 100%;
 }
 
 .obsidipi-error {

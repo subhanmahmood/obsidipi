@@ -1,4 +1,4 @@
-import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
+import { ItemView, MarkdownRenderer, Notice, WorkspaceLeaf, setIcon } from "obsidian";
 import type { Agent } from "@mariozechner/pi-agent-core";
 import type { AgentEvent } from "@mariozechner/pi-agent-core";
 import type { AssistantMessage, TextContent } from "@mariozechner/pi-ai";
@@ -15,6 +15,10 @@ export class ObsidipiChatView extends ItemView {
 	private inputEl!: HTMLTextAreaElement;
 	private sendBtn!: HTMLButtonElement;
 	private currentAssistantBubble: HTMLDivElement | null = null;
+	private currentAssistantContent: HTMLDivElement | null = null;
+	private currentAssistantText = "";
+	private renderRafHandle: number | null = null;
+	private renderGeneration = 0;
 	private toolBubbles = new Map<string, HTMLDivElement>();
 
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidipiPlugin) {
@@ -61,6 +65,7 @@ export class ObsidipiChatView extends ItemView {
 	}
 
 	async onClose() {
+		this.cancelScheduledRender();
 		this.unsubscribe?.();
 		this.agent?.abort();
 	}
@@ -100,20 +105,27 @@ export class ObsidipiChatView extends ItemView {
 		switch (event.type) {
 			case "message_start":
 				if (event.message.role === "assistant") {
-					this.currentAssistantBubble = this.appendAssistantBubble("");
+					const { bubble, content } = this.appendAssistantBubble();
+					this.currentAssistantBubble = bubble;
+					this.currentAssistantContent = content;
+					this.currentAssistantText = "";
 				}
 				break;
 			case "message_update":
-				if (event.message.role === "assistant" && this.currentAssistantBubble) {
-					this.currentAssistantBubble.setText(extractText(event.message));
-					this.scrollToBottom();
+				if (event.message.role === "assistant" && this.currentAssistantContent) {
+					this.currentAssistantText = extractText(event.message);
+					this.scheduleMarkdownRender();
 				}
 				break;
 			case "message_end":
-				if (event.message.role === "assistant" && this.currentAssistantBubble) {
-					const text = extractText(event.message);
-					this.currentAssistantBubble.setText(text || "(no response)");
+				if (event.message.role === "assistant" && this.currentAssistantContent && this.currentAssistantBubble) {
+					this.currentAssistantText = extractText(event.message) || "(no response)";
+					this.cancelScheduledRender();
+					void this.renderMarkdownInto(this.currentAssistantContent, this.currentAssistantText);
+					this.currentAssistantBubble.dataset.markdown = this.currentAssistantText;
 					this.currentAssistantBubble = null;
+					this.currentAssistantContent = null;
+					this.currentAssistantText = "";
 					if (event.message.stopReason === "error" && event.message.errorMessage) {
 						this.appendErrorBubble(event.message.errorMessage);
 					}
@@ -157,13 +169,65 @@ export class ObsidipiChatView extends ItemView {
 		this.scrollToBottom();
 	}
 
-	private appendAssistantBubble(text: string): HTMLDivElement {
-		const el = this.messagesEl.createDiv({
-			cls: "obsidipi-bubble obsidipi-assistant",
+	private appendAssistantBubble(): { bubble: HTMLDivElement; content: HTMLDivElement } {
+		const bubble = this.messagesEl.createDiv({
+			cls: "obsidipi-bubble obsidipi-assistant markdown-rendered",
 		});
-		if (text) el.setText(text);
+		const content = bubble.createDiv({ cls: "obsidipi-assistant-content" });
+		const copyBtn = bubble.createEl("button", {
+			cls: "obsidipi-copy clickable-icon",
+			attr: { "aria-label": "Copy markdown" },
+		});
+		setIcon(copyBtn, "copy");
+		copyBtn.addEventListener("click", (e) => {
+			e.stopPropagation();
+			void this.copyBubble(bubble, copyBtn);
+		});
 		this.scrollToBottom();
-		return el;
+		return { bubble, content };
+	}
+
+	private async copyBubble(bubble: HTMLDivElement, btn: HTMLButtonElement) {
+		const markdown = bubble.dataset.markdown ?? "";
+		if (!markdown) {
+			new Notice("Nothing to copy yet");
+			return;
+		}
+		try {
+			await navigator.clipboard.writeText(markdown);
+			setIcon(btn, "check");
+			window.setTimeout(() => setIcon(btn, "copy"), 1200);
+		} catch {
+			new Notice("Copy failed");
+		}
+	}
+
+	private scheduleMarkdownRender() {
+		if (this.renderRafHandle !== null) return;
+		this.renderRafHandle = window.requestAnimationFrame(() => {
+			this.renderRafHandle = null;
+			const content = this.currentAssistantContent;
+			if (!content) return;
+			void this.renderMarkdownInto(content, this.currentAssistantText);
+			this.scrollToBottom();
+		});
+	}
+
+	private cancelScheduledRender() {
+		if (this.renderRafHandle !== null) {
+			window.cancelAnimationFrame(this.renderRafHandle);
+			this.renderRafHandle = null;
+		}
+	}
+
+	private async renderMarkdownInto(el: HTMLElement, markdown: string) {
+		const gen = ++this.renderGeneration;
+		const sourcePath = this.app.workspace.getActiveFile()?.path ?? "";
+		const tmp = document.createElement("div");
+		await MarkdownRenderer.render(this.app, markdown, tmp, sourcePath, this);
+		if (gen !== this.renderGeneration) return;
+		el.empty();
+		while (tmp.firstChild) el.appendChild(tmp.firstChild);
 	}
 
 	private appendErrorBubble(text: string) {

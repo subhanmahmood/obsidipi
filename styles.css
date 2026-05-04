@@ -6,6 +6,14 @@
 	gap: 8px;
 }
 
+.obsidipi-messages,
+.obsidipi-bubble,
+.obsidipi-tool {
+	user-select: text;
+	-webkit-user-select: text;
+	-webkit-touch-callout: default;
+}
+
 .obsidipi-messages {
 	flex: 1;
 	overflow-y: auto;
@@ -68,25 +76,42 @@
 	height: 14px;
 }
 
-.obsidipi-assistant-content > * {
-	margin-top: 0.5em;
-	margin-bottom: 0.5em;
+/* Override Obsidian's reading-view paragraph spacing variables.
+   Many themes drive block margins from --p-spacing instead of literal values. */
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content {
+	--p-spacing: 0.4em;
+	--p-spacing-empty: 0;
+	--heading-spacing: 0.6em;
 }
 
-.obsidipi-assistant-content > :first-child {
+/* Beat .markdown-rendered <selector> (specificity 0,1,1) with 0,3,1. */
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content p,
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content ul,
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content ol,
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content table,
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content pre,
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content blockquote,
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content hr {
+	margin-top: 0.4em;
+	margin-bottom: 0.4em;
+}
+
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content h1,
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content h2,
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content h3,
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content h4,
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content h5,
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content h6 {
+	margin-top: 0.7em;
+	margin-bottom: 0.25em;
+}
+
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content > :first-child {
 	margin-top: 0;
 }
 
-.obsidipi-assistant-content > :last-child {
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content > :last-child {
 	margin-bottom: 0;
-}
-
-.obsidipi-assistant-content h1,
-.obsidipi-assistant-content h2,
-.obsidipi-assistant-content h3,
-.obsidipi-assistant-content h4 {
-	margin-top: 0.8em;
-	margin-bottom: 0.3em;
 }
 
 .obsidipi-assistant-content ul,
@@ -96,6 +121,13 @@
 
 .obsidipi-assistant-content li {
 	margin: 0.1em 0;
+}
+
+/* Some themes inject padding into block elements via reading-view rules — neutralize. */
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content p,
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content table {
+	padding-top: 0;
+	padding-bottom: 0;
 }
 
 .obsidipi-assistant-content table {

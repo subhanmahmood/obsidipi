@@ -17,6 +17,8 @@ export async function callOnce(
 			return callOpenAI("https://api.openai.com/v1", model, apiKey);
 		case "openrouter":
 			return callOpenAI("https://openrouter.ai/api/v1", model, apiKey);
+		case "deepseek":
+			return callOpenAI("https://api.deepseek.com/v1", model, apiKey);
 	}
 }
 

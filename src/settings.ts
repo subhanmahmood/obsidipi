@@ -2,7 +2,7 @@ import * as obsidian from "obsidian";
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type ObsidipiPlugin from "./main";
 
-export type Provider = "anthropic" | "google" | "openai" | "openrouter";
+export type Provider = "anthropic" | "google" | "openai" | "openrouter" | "deepseek";
 
 export interface ObsidipiSettings {
 	provider: Provider;
@@ -11,8 +11,8 @@ export interface ObsidipiSettings {
 }
 
 export const DEFAULT_SETTINGS: ObsidipiSettings = {
-	provider: "google",
-	model: "gemini-2.0-flash",
+	provider: "deepseek",
+	model: "deepseek-chat",
 	apiKeyOrSecretName: "",
 };
 
@@ -21,6 +21,7 @@ const PROVIDER_LABELS: Record<Provider, string> = {
 	google: "Google (Gemini)",
 	openai: "OpenAI",
 	openrouter: "OpenRouter",
+	deepseek: "DeepSeek",
 };
 
 export class ObsidipiSettingTab extends PluginSettingTab {
@@ -50,7 +51,7 @@ export class ObsidipiSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Model")
-			.setDesc("Provider-specific model id (e.g. gemini-2.0-flash, claude-sonnet-4-6).")
+			.setDesc("Provider-specific model id (e.g. deepseek-chat, deepseek-reasoner).")
 			.addText((text) =>
 				text
 					.setPlaceholder("model id")

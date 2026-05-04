@@ -1,8 +1,88 @@
-/*
+.obsidipi-root {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	padding: 8px;
+	gap: 8px;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.obsidipi-messages {
+	flex: 1;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding-right: 4px;
+}
 
-If your plugin does not need CSS, delete this file.
+.obsidipi-bubble {
+	padding: 8px 10px;
+	border-radius: 10px;
+	max-width: 100%;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	line-height: 1.4;
+}
 
-*/
+.obsidipi-user {
+	align-self: flex-end;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	max-width: 85%;
+}
+
+.obsidipi-assistant {
+	align-self: flex-start;
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	max-width: 95%;
+}
+
+.obsidipi-error {
+	align-self: stretch;
+	background: var(--background-modifier-error);
+	color: var(--text-error);
+	font-size: 0.9em;
+}
+
+.obsidipi-tool {
+	align-self: flex-start;
+	font-family: var(--font-monospace, monospace);
+	font-size: 0.85em;
+	padding: 4px 8px;
+	border-radius: 6px;
+	max-width: 100%;
+	color: var(--text-muted);
+	background: var(--background-secondary-alt);
+}
+
+.obsidipi-tool-running {
+	color: var(--text-accent);
+}
+
+.obsidipi-tool-ok {
+	color: var(--text-success, var(--text-muted));
+}
+
+.obsidipi-tool-error {
+	color: var(--text-error);
+	background: var(--background-modifier-error);
+}
+
+.obsidipi-input-row {
+	display: flex;
+	gap: 6px;
+	align-items: stretch;
+}
+
+.obsidipi-input {
+	flex: 1;
+	resize: none;
+	min-height: 44px;
+	font-family: inherit;
+}
+
+.obsidipi-send {
+	align-self: stretch;
+	min-width: 64px;
+}

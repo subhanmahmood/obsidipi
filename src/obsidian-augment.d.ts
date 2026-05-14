@@ -1,5 +1,5 @@
 import "obsidian";
-import type { App, ValueComponent } from "obsidian";
+import type { ValueComponent } from "obsidian";
 
 /*
  * SecretStorage / SecretComponent ship at runtime in recent Obsidian builds
@@ -18,7 +18,7 @@ declare module "obsidian" {
 	}
 
 	export class SecretComponent extends ValueComponent<string> {
-		constructor(app: App, containerEl: HTMLElement);
+		constructor(app: import("obsidian").App, containerEl: HTMLElement);
 		getValue(): string;
 		setValue(value: string): this;
 		onChange(callback: (value: string) => unknown): this;

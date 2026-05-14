@@ -1,6 +1,9 @@
 import esbuild from "esbuild";
 import process from "process";
 import { builtinModules } from 'node:module';
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { homedir } from 'node:os';
 
 const banner =
 `/*
@@ -10,6 +13,32 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = (process.argv[2] === "production");
+
+const vaultPluginDir =
+	process.env.OBSIDIPI_VAULT_PLUGIN_DIR
+	?? join(homedir(), "Documents/notes/.obsidian/plugins/obsidipi");
+
+const repoRoot = dirname(new URL(import.meta.url).pathname);
+
+const copyToVaultPlugin = {
+	name: "copy-to-vault-plugin",
+	setup(build) {
+		build.onEnd((result) => {
+			if (result.errors.length > 0) return;
+			if (!existsSync(vaultPluginDir)) {
+				console.log(`[copy-to-vault] skip: ${vaultPluginDir} does not exist`);
+				return;
+			}
+			mkdirSync(vaultPluginDir, { recursive: true });
+			for (const file of ["main.js", "styles.css", "manifest.json"]) {
+				const src = join(repoRoot, file);
+				if (!existsSync(src)) continue;
+				copyFileSync(src, join(vaultPluginDir, file));
+			}
+			console.log(`[copy-to-vault] copied → ${vaultPluginDir}`);
+		});
+	},
+};
 
 const context = await esbuild.context({
 	banner: {
@@ -39,6 +68,7 @@ const context = await esbuild.context({
 	treeShaking: true,
 	outfile: "main.js",
 	minify: prod,
+	plugins: [copyToVaultPlugin],
 });
 
 if (prod) {

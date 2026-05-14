@@ -3,6 +3,26 @@ import type { Provider } from "./settings";
 
 const TEST_PROMPT = "Reply with exactly the word: pong";
 
+interface GeminiResponse {
+	candidates?: Array<{
+		content?: {
+			parts?: Array<{ text?: unknown }>;
+		};
+	}>;
+}
+
+interface AnthropicResponse {
+	content?: Array<{ text?: unknown }>;
+}
+
+interface OpenAIResponse {
+	choices?: Array<{
+		message?: {
+			content?: unknown;
+		};
+	}>;
+}
+
 export async function callOnce(
 	provider: Provider,
 	model: string,
@@ -33,7 +53,8 @@ async function callGemini(model: string, apiKey: string): Promise<string> {
 		throw: false,
 	});
 	if (res.status >= 400) throw new Error(`Gemini ${res.status}: ${res.text.slice(0, 200)}`);
-	const text = res.json?.candidates?.[0]?.content?.parts?.[0]?.text;
+	const body = res.json as GeminiResponse | undefined;
+	const text = body?.candidates?.[0]?.content?.parts?.[0]?.text;
 	if (typeof text !== "string") throw new Error(`Gemini: no text in response`);
 	return text.trim();
 }
@@ -55,7 +76,8 @@ async function callAnthropic(model: string, apiKey: string): Promise<string> {
 		throw: false,
 	});
 	if (res.status >= 400) throw new Error(`Anthropic ${res.status}: ${res.text.slice(0, 200)}`);
-	const text = res.json?.content?.[0]?.text;
+	const body = res.json as AnthropicResponse | undefined;
+	const text = body?.content?.[0]?.text;
 	if (typeof text !== "string") throw new Error(`Anthropic: no text in response`);
 	return text.trim();
 }
@@ -73,7 +95,8 @@ async function callOpenAI(baseUrl: string, model: string, apiKey: string): Promi
 		throw: false,
 	});
 	if (res.status >= 400) throw new Error(`OpenAI ${res.status}: ${res.text.slice(0, 200)}`);
-	const text = res.json?.choices?.[0]?.message?.content;
+	const body = res.json as OpenAIResponse | undefined;
+	const text = body?.choices?.[0]?.message?.content;
 	if (typeof text !== "string") throw new Error(`OpenAI: no text in response`);
 	return text.trim();
 }

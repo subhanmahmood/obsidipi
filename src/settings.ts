@@ -38,7 +38,7 @@ export class ObsidipiSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Provider")
-			.setDesc("Which LLM backend to call.")
+			.setDesc("Which model backend to call.")
 			.addDropdown((dd) => {
 				for (const [value, label] of Object.entries(PROVIDER_LABELS)) {
 					dd.addOption(value, label);
@@ -51,10 +51,10 @@ export class ObsidipiSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Model")
-			.setDesc("Provider-specific model id (e.g. deepseek-chat, deepseek-reasoner).")
+			.setDesc("Model identifier for this provider, like deepseek-chat or deepseek-reasoner.")
 			.addText((text) =>
 				text
-					.setPlaceholder("model id")
+					.setPlaceholder("Model identifier")
 					.setValue(this.plugin.settings.model)
 					.onChange(async (value) => {
 						this.plugin.settings.model = value.trim();
@@ -74,7 +74,7 @@ export class ObsidipiSettingTab extends PluginSettingTab {
 		if (SecretComponentCtor) {
 			setting
 				.setDesc(
-					"Pick or create a secret in Obsidian's SecretStorage. The value is kept out of this plugin's data.json and is per-device.",
+					"Pick or create an Obsidian secret. The value stays out of plugin data.json and is stored on this device.",
 				)
 				.addComponent((el: HTMLElement) =>
 					new SecretComponentCtor(this.app, el)
@@ -87,11 +87,11 @@ export class ObsidipiSettingTab extends PluginSettingTab {
 		} else {
 			setting
 				.setDesc(
-					"Stored in plugin data.json on this device (plaintext). Upgrade Obsidian to use the SecretStorage picker.",
+					"Stored in plugin data.json on this device as plaintext. Upgrade Obsidian to use the secret picker.",
 				)
 				.addText((text) =>
 					text
-						.setPlaceholder("paste API key")
+						.setPlaceholder("Paste key")
 						.setValue(this.plugin.settings.apiKeyOrSecretName)
 						.onChange(async (value) => {
 							this.plugin.settings.apiKeyOrSecretName = value.trim();

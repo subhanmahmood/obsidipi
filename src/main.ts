@@ -36,7 +36,7 @@ export default class ObsidipiPlugin extends Plugin {
 			},
 		});
 
-		this.addRibbonIcon("message-square", "Obsidipi: Open chat", () => {
+		this.addRibbonIcon("message-square", "Obsidipi: open chat", () => {
 			void this.activateChatView();
 		});
 	}
@@ -53,11 +53,11 @@ export default class ObsidipiPlugin extends Plugin {
 				await leaf.setViewState({ type: OBSIDIPI_VIEW_TYPE, active: true });
 			}
 		}
-		if (leaf) workspace.revealLeaf(leaf);
+		if (leaf) await workspace.revealLeaf(leaf);
 	}
 
 	private async runTestCall() {
-		console.log("[obsidipi] test call: start", {
+		console.debug("[obsidipi] test call: start", {
 			provider: this.settings.provider,
 			model: this.settings.model,
 			secretName: this.settings.apiKeyOrSecretName,
@@ -73,7 +73,7 @@ export default class ObsidipiPlugin extends Plugin {
 			new Notice("Obsidipi: no model configured", 8000);
 			return;
 		}
-		console.log("[obsidipi] test call: keyResolved", {
+		console.debug("[obsidipi] test call: keyResolved", {
 			keyLength: apiKey.length,
 			keyPrefix: apiKey.slice(0, 4),
 			isSecretName: apiKey === this.settings.apiKeyOrSecretName,
@@ -81,7 +81,7 @@ export default class ObsidipiPlugin extends Plugin {
 		new Notice(`Obsidipi: calling ${provider} (${model})…`, 4000);
 		try {
 			const reply = await callOnce(provider, model, apiKey);
-			console.log("[obsidipi] test call: success", reply);
+			console.debug("[obsidipi] test call: success", reply);
 			new Notice(`Obsidipi reply: ${reply}`, 12000);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);

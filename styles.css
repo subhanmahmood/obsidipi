@@ -46,6 +46,7 @@
 	color: var(--text-normal);
 	max-width: 95%;
 	padding-right: 32px;
+	white-space: normal;
 }
 
 .obsidipi-copy {
@@ -82,6 +83,8 @@
 	--p-spacing: 0.4em;
 	--p-spacing-empty: 0;
 	--heading-spacing: 0.6em;
+	--list-spacing: 0.25em;
+	white-space: normal;
 }
 
 /* Beat .markdown-rendered <selector> (specificity 0,1,1) with 0,3,1. */
@@ -121,6 +124,19 @@
 
 .obsidipi-assistant-content li {
 	margin: 0.1em 0;
+}
+
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content li > p {
+	margin-top: 0;
+	margin-bottom: 0.2em;
+}
+
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content li > p:first-child {
+	margin-top: 0;
+}
+
+.obsidipi-assistant.markdown-rendered .obsidipi-assistant-content li > p:last-child {
+	margin-bottom: 0;
 }
 
 /* Some themes inject padding into block elements via reading-view rules — neutralize. */

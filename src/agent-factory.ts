@@ -5,7 +5,30 @@ import {
 import type { Model } from "@mariozechner/pi-ai";
 import type { App } from "obsidian";
 import { resolveApiKey, type ObsidipiSettings } from "./settings";
-import { editNoteTool, readNoteTool } from "./vault-tools";
+import {
+	addTagTool,
+	appendNoteTool,
+	createNoteTool,
+	editNoteTool,
+	getActiveNoteTool,
+	getBacklinksTool,
+	getDailyNoteTool,
+	getHeadingsTool,
+	getNotesByTagTool,
+	listFolderTool,
+	moveNoteTool,
+	readNoteTool,
+	searchVaultTool,
+	setFrontmatterTool,
+	trashNoteTool,
+} from "./vault-tools";
+import {
+	askUserTool,
+	type MetaUxBridge,
+	planTool,
+	todoCheckTool,
+	todoWriteTool,
+} from "./meta-tools";
 
 const PROVIDER_BASE_URLS: Record<ObsidipiSettings["provider"], string> = {
 	deepseek: "https://api.deepseek.com",
@@ -15,14 +38,52 @@ const PROVIDER_BASE_URLS: Record<ObsidipiSettings["provider"], string> = {
 	openrouter: "https://openrouter.ai/api/v1",
 };
 
-const MUTATING_TOOLS = new Set<string>(["edit_note"]);
+const MUTATING_TOOLS = new Set<string>([
+	"edit_note",
+	"create_note",
+	"append_note",
+	"trash_note",
+	"move_note",
+	"set_frontmatter",
+	"add_tag",
+]);
 
 const SYSTEM_PROMPT =
 	"You are Obsidipi, an assistant inside an Obsidian vault on iOS. " +
-	"You can read notes with read_note and propose edits with edit_note. " +
+	"Vault tools: " +
+	"search_vault (case-insensitive substring search across all markdown notes; use first when the user mentions a topic but not a path), " +
+	"get_active_note (the note the user currently has open; use when they say 'this note' / 'the current note'), " +
+	"list_folder (browse vault structure), " +
+	"read_note (read a specific note by path), " +
+	"edit_note (propose a diff-based edit to a single note), " +
+	"create_note (create a new note; auto-creates parent folders; fails if path exists), " +
+	"append_note (append text to the end of an existing note — the most common write op for daily logs and inbox capture), " +
+	"trash_note (move a note to the system trash, recoverable), " +
+	"move_note (move/rename a note; incoming links update automatically), " +
+	"set_frontmatter (set or remove a frontmatter key; pass null to remove), " +
+	"add_tag (add a tag to a note's frontmatter `tags:` array), " +
+	"get_backlinks (list notes linking to a target note via Obsidian's resolved-link index), " +
+	"get_notes_by_tag (find notes by tag — matches the tag and any nested sub-tags), " +
+	"get_daily_note (resolve the daily note for a date using the Daily Notes plugin config; default today), " +
+	"get_headings (outline a note's headings with levels and line numbers — call before structural edits). " +
+	"Meta tools (no vault I/O): " +
+	"plan (propose an ordered list of steps and pause for 'Go'/'Stop' — use before any multi-step work), " +
+	"todo_write (replace the visible todo list; each item has id, text, and optional status of pending/in_progress/done — call this up front and again when items move to in_progress), " +
+	"todo_check (mark a todo done by id — call as each step completes), " +
+	"ask_user (pause to ask a clarifying question with optional quick-reply chips — use sparingly, only when guessing would risk wrong work). " +
 	"Vault paths are relative and must include the .md extension. " +
-	"Every edit_note call is gated on explicit user approval — that's expected; do not " +
-	"retry the same edit immediately if it gets rejected, ask the user what to do instead. " +
+	"Wiki-links of the form `[[note.md]]` in user messages are explicit pointers to vault " +
+	"notes — treat them as authoritative paths and call read_note on them when you need the " +
+	"contents (don't search for them). " +
+	"When relaying search_vault results to the user, keep them as a bullet list and preserve " +
+	"`[[note.md]]` wiki-link syntax verbatim — do not reformat into a table, that drops the " +
+	"link clickability. " +
+	"Every mutating tool (edit_note, create_note, append_note, trash_note, move_note, " +
+	"set_frontmatter, add_tag) is gated on explicit user approval — that's expected; do not " +
+	"retry the same write immediately if it gets rejected, ask the user what to do instead. " +
+	"For longer tasks: call plan first, then todo_write, then execute step-by-step, calling " +
+	"todo_check after each step. If a plan is rejected, don't propose the same plan again — " +
+	"ask the user what they'd prefer. " +
 	"Be concise.";
 
 export interface ApprovalRequest {
@@ -33,6 +94,10 @@ export interface ApprovalRequest {
 }
 
 export type ApprovalRequester = (request: ApprovalRequest, signal?: AbortSignal) => void;
+
+export interface ChatViewBridge extends MetaUxBridge {
+	requestApproval: ApprovalRequester;
+}
 
 export function buildModel(settings: ObsidipiSettings): Model<"openai-completions"> {
 	return {
@@ -52,13 +117,33 @@ export function buildModel(settings: ObsidipiSettings): Model<"openai-completion
 export function createAgent(
 	app: App,
 	settings: ObsidipiSettings,
-	onApprovalNeeded: ApprovalRequester,
+	bridge: ChatViewBridge,
 ): Agent {
 	return new Agent({
 		initialState: {
 			model: buildModel(settings),
 			systemPrompt: SYSTEM_PROMPT,
-			tools: [readNoteTool(app), editNoteTool(app)],
+			tools: [
+				searchVaultTool(app),
+				getActiveNoteTool(app),
+				listFolderTool(app),
+				readNoteTool(app),
+				editNoteTool(app),
+				createNoteTool(app),
+				appendNoteTool(app),
+				trashNoteTool(app),
+				moveNoteTool(app),
+				setFrontmatterTool(app),
+				addTagTool(app),
+				getBacklinksTool(app),
+				getNotesByTagTool(app),
+				getDailyNoteTool(app),
+				getHeadingsTool(app),
+				planTool(bridge),
+				askUserTool(bridge),
+				todoWriteTool(bridge),
+				todoCheckTool(bridge),
+			],
 		},
 		streamFn: streamSimpleOpenAICompletions,
 		getApiKey: () => {
@@ -69,7 +154,7 @@ export function createAgent(
 			if (!MUTATING_TOOLS.has(toolCall.name)) return undefined;
 			const approved = await waitForApproval(
 				{ toolCallId: toolCall.id, toolName: toolCall.name, args },
-				onApprovalNeeded,
+				bridge.requestApproval,
 				signal,
 			);
 			if (approved) return undefined;

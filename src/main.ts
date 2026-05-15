@@ -1,4 +1,4 @@
-import { Notice, Plugin, WorkspaceLeaf } from "obsidian";
+import { FuzzySuggestModal, Notice, Plugin, WorkspaceLeaf } from "obsidian";
 import {
 	DEFAULT_SETTINGS,
 	ObsidipiSettings,
@@ -7,6 +7,7 @@ import {
 } from "./settings";
 import { callOnce } from "./test-call";
 import { OBSIDIPI_VIEW_TYPE, ObsidipiChatView } from "./chat-view";
+import { listThreads, type ThreadSummary } from "./thread-store";
 
 export default class ObsidipiPlugin extends Plugin {
 	settings: ObsidipiSettings;
@@ -36,12 +37,46 @@ export default class ObsidipiPlugin extends Plugin {
 			},
 		});
 
+		this.addCommand({
+			id: "new-thread",
+			name: "New thread",
+			callback: () => {
+				void this.runNewThread();
+			},
+		});
+
+		this.addCommand({
+			id: "open-thread",
+			name: "Open thread…",
+			callback: () => {
+				void this.runOpenThread();
+			},
+		});
+
 		this.addRibbonIcon("message-square", "Obsidipi: open chat", () => {
 			void this.activateChatView();
 		});
 	}
 
-	private async activateChatView() {
+	private async runNewThread() {
+		const view = await this.activateChatView();
+		view?.startNewThread();
+	}
+
+	private async runOpenThread() {
+		const view = await this.activateChatView();
+		if (!view) return;
+		const threads = await listThreads(this.app);
+		if (threads.length === 0) {
+			new Notice("Obsidipi: no saved threads yet", 4000);
+			return;
+		}
+		new ThreadPickerModal(this, threads, (path) => {
+			void view.openThreadAtPath(path);
+		}).open();
+	}
+
+	private async activateChatView(): Promise<ObsidipiChatView | null> {
 		const { workspace } = this.app;
 		const existing = workspace.getLeavesOfType(OBSIDIPI_VIEW_TYPE);
 		let leaf: WorkspaceLeaf | null;
@@ -53,7 +88,10 @@ export default class ObsidipiPlugin extends Plugin {
 				await leaf.setViewState({ type: OBSIDIPI_VIEW_TYPE, active: true });
 			}
 		}
-		if (leaf) await workspace.revealLeaf(leaf);
+		if (!leaf) return null;
+		await workspace.revealLeaf(leaf);
+		const view = leaf.view;
+		return view instanceof ObsidipiChatView ? view : null;
 	}
 
 	private async runTestCall() {
@@ -100,5 +138,28 @@ export default class ObsidipiPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+}
+
+class ThreadPickerModal extends FuzzySuggestModal<ThreadSummary> {
+	constructor(
+		plugin: ObsidipiPlugin,
+		private threads: ThreadSummary[],
+		private onPick: (path: string) => void,
+	) {
+		super(plugin.app);
+		this.setPlaceholder("Search threads…");
+	}
+
+	getItems(): ThreadSummary[] {
+		return this.threads;
+	}
+
+	getItemText(item: ThreadSummary): string {
+		return `${item.title} · ${item.updatedAt.slice(0, 16).replace("T", " ")}`;
+	}
+
+	onChooseItem(item: ThreadSummary): void {
+		this.onPick(item.path);
 	}
 }

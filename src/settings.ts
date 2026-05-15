@@ -102,6 +102,11 @@ export class ObsidipiSettingTab extends PluginSettingTab {
 	}
 }
 
+// `app.secretStorage` shipped in Obsidian 1.11.4 (matches manifest.minAppVersion).
+// When the runtime API is present, `apiKeyOrSecretName` is treated as a secret
+// id and the actual value is fetched from per-device storage outside data.json
+// (so it isn't synced via Obsidian Sync or iCloud). Older builds fall back to
+// reading the raw key from settings as plaintext.
 export function resolveApiKey(app: App, settings: ObsidipiSettings): string | null {
 	if (!settings.apiKeyOrSecretName) return null;
 	if (!app.secretStorage) return settings.apiKeyOrSecretName;

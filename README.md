@@ -4,7 +4,7 @@ A chat-driven agent that lives inside your Obsidian vault — built mobile-first
 
 Built on [`pi-mono`](https://github.com/badlogic/pi-mono) (`@mariozechner/pi-agent-core` for the loop, `@mariozechner/pi-ai/openai-completions` for transport). Defaults to DeepSeek via its OpenAI-compatible endpoint.
 
-> Status: **functional preview**. All listed tools and UI work in desktop Obsidian. iOS smoke-testing is still in progress — see the roadmap section.
+> Status: **functional preview**. All listed tools and UI work in desktop Obsidian. iOS smoke-testing is still in progress — see the roadmap section. Not yet submitted to the Obsidian community plugin catalog; install via the dev steps below.
 
 ## Highlights
 
@@ -52,6 +52,14 @@ Open Settings → Obsidipi:
 - **API key** — stored via Obsidian's `secretStorage` API (Obsidian 1.11.4+), keyed per device, kept out of `data.json` so it doesn't sync via Obsidian Sync or iCloud.
 
 A `Obsidipi: Test API key` command does a one-shot non-streaming call so you can verify credentials without opening the chat.
+
+## Privacy & network
+
+- **One outbound destination per chat.** Whatever provider you configured — DeepSeek (`api.deepseek.com`), Anthropic (`api.anthropic.com`), Google (`generativelanguage.googleapis.com`), OpenAI (`api.openai.com`), or OpenRouter (`openrouter.ai`). No third party in between. The base URL is fixed in `agent-factory.ts`.
+- **What gets sent.** Your message history for the current thread, your API key (in the `Authorization` header), the system prompt, and the tool-call schemas. Tool *results* (note contents the model has read) become part of the transcript and are included on subsequent turns — same as any chat-with-tools setup.
+- **Nothing else leaves the device.** No analytics, no telemetry, no auto-update pings, no remote configuration, no "phone home" anywhere in the bundle. Search the code for `fetch` / `requestUrl` / `XMLHttpRequest` — the only hits are the provider call path.
+- **API key storage.** Stored via Obsidian's `secretStorage` (1.11.4+) — kept on this device, outside `data.json`, not picked up by Obsidian Sync or iCloud vault backups. Plain-text at rest (not Keychain), per-device (re-enter on each device).
+- **Threads stay local.** Conversation persistence is plain markdown under `.harness/threads/` in the vault. They sync the same way the rest of your vault does (Obsidian Sync, iCloud, Git — your call); they never leave that path.
 
 ## Tools the agent can call
 

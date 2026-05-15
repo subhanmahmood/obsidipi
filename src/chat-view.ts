@@ -145,6 +145,10 @@ export class ObsidipiChatView extends ItemView {
 	}
 
 	async onClose() {
+		// Tear down every resource owned by this view so disabling/re-enabling
+		// the plugin (or closing the leaf) leaves nothing leaked: pending
+		// requestAnimationFrame, document-level mention-popover listeners, the
+		// agent's event subscription, and any in-flight LLM request.
 		this.cancelScheduledRender();
 		this.closeMentionPicker();
 		this.unsubscribe?.();

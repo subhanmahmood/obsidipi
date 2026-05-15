@@ -146,6 +146,11 @@ export function createAgent(
 			],
 		},
 		streamFn: streamSimpleOpenAICompletions,
+		// Always provide getApiKey so pi-ai never reaches its env-var fallback path
+		// in `env-api-keys.ts`. That file contains a `require("node:fs")` gated on
+		// `process.versions?.bun && empty process.env` — dead on iOS (where
+		// `process` is undefined) but still visible in the bundle. Supplying the
+		// key here guarantees the fallback is never invoked.
 		getApiKey: () => {
 			const key = resolveApiKey(app, settings);
 			return key ?? undefined;

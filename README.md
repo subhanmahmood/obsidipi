@@ -18,9 +18,22 @@ Built on [`pi-mono`](https://github.com/badlogic/pi-mono) (`@mariozechner/pi-age
 
 **No backend, no native deps.** Everything runs inside the Obsidian plugin sandbox. Bundle: ~2.2 MB.
 
+## Install (beta, via BRAT)
+
+The plugin isn't on the community catalog yet, but you can install it on any vault (mobile or desktop) using [Obsidian42 - BRAT](https://github.com/TfTHacker/obsidian42-brat):
+
+1. In Obsidian: Settings → **Community plugins** → Browse → install **Obsidian42 - BRAT** → enable it.
+2. Open BRAT's settings → **Add Beta plugin**.
+3. Paste the repo path: `subhanmahmood/obsidipi`
+4. Back in Community plugins, enable **Obsidipi**.
+
+BRAT will automatically pull new releases as they're cut here. To stay on a specific version, use BRAT's "Add Beta plugin with frozen version" instead and paste the version (e.g. `0.1.0`).
+
+Releases are tagged on [GitHub](https://github.com/subhanmahmood/obsidipi/releases). Each release attaches `manifest.json`, `main.js`, and `styles.css` so BRAT (and Obsidian itself) can fetch them directly.
+
 ## Install (development)
 
-The plugin is not yet on the community catalog. To run locally:
+If you want to hack on the plugin instead of testing it:
 
 ```bash
 git clone https://github.com/subhanmahmood/obsidipi.git

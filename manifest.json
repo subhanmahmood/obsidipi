@@ -1,7 +1,7 @@
 {
 	"id": "obsidipi",
 	"name": "Obsidipi",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"minAppVersion": "1.11.4",
 	"description": "Coding-harness chat agent for your vault. Read, search, and edit notes via natural language.",
 	"author": "Subhan Mahmood",

@@ -4,16 +4,23 @@ import type ObsidipiPlugin from "./main";
 
 export type Provider = "anthropic" | "google" | "openai" | "openrouter" | "deepseek";
 
+export type WebSearchProvider = "tavily" | "brave";
+export type WebSearchProviderSetting = WebSearchProvider | "off";
+
 export interface ObsidipiSettings {
 	provider: Provider;
 	model: string;
 	apiKeyOrSecretName: string;
+	webSearchProvider: WebSearchProviderSetting;
+	webSearchApiKeyOrSecretName: string;
 }
 
 export const DEFAULT_SETTINGS: ObsidipiSettings = {
 	provider: "deepseek",
 	model: "deepseek-chat",
 	apiKeyOrSecretName: "",
+	webSearchProvider: "off",
+	webSearchApiKeyOrSecretName: "",
 };
 
 const PROVIDER_LABELS: Record<Provider, string> = {
@@ -22,6 +29,12 @@ const PROVIDER_LABELS: Record<Provider, string> = {
 	openai: "OpenAI",
 	openrouter: "OpenRouter",
 	deepseek: "DeepSeek",
+};
+
+const WEB_SEARCH_LABELS: Record<WebSearchProviderSetting, string> = {
+	off: "Off",
+	tavily: "Tavily",
+	brave: "Brave",
 };
 
 export class ObsidipiSettingTab extends PluginSettingTab {
@@ -62,14 +75,53 @@ export class ObsidipiSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		this.renderApiKeySetting(containerEl);
+		this.renderSecretSetting(containerEl, {
+			name: "API key",
+			value: this.plugin.settings.apiKeyOrSecretName,
+			onChange: (value) => {
+				this.plugin.settings.apiKeyOrSecretName = value;
+			},
+		});
+
+		containerEl.createEl("h3", { text: "Web search" });
+
+		new Setting(containerEl)
+			.setName("Web search provider")
+			.setDesc("Adds a `web_search` tool the model can call. Off by default.")
+			.addDropdown((dd) => {
+				for (const [value, label] of Object.entries(WEB_SEARCH_LABELS)) {
+					dd.addOption(value, label);
+				}
+				dd.setValue(this.plugin.settings.webSearchProvider).onChange(async (value) => {
+					this.plugin.settings.webSearchProvider = value as WebSearchProviderSetting;
+					await this.plugin.saveSettings();
+					this.display();
+				});
+			});
+
+		if (this.plugin.settings.webSearchProvider !== "off") {
+			this.renderSecretSetting(containerEl, {
+				name: "Web search API key",
+				value: this.plugin.settings.webSearchApiKeyOrSecretName,
+				onChange: (value) => {
+					this.plugin.settings.webSearchApiKeyOrSecretName = value;
+				},
+			});
+		}
 	}
 
-	private renderApiKeySetting(containerEl: HTMLElement) {
+	private renderSecretSetting(
+		containerEl: HTMLElement,
+		opts: {
+			name: string;
+			value: string;
+			onChange: (value: string) => void;
+		},
+	) {
 		const SecretComponentCtor = (obsidian as { SecretComponent?: typeof obsidian.SecretComponent })
 			.SecretComponent;
 
-		const setting = new Setting(containerEl).setName("API key");
+		const setting = new Setting(containerEl).setName(opts.name);
 
 		if (SecretComponentCtor) {
 			setting
@@ -78,9 +130,9 @@ export class ObsidipiSettingTab extends PluginSettingTab {
 				)
 				.addComponent((el: HTMLElement) =>
 					new SecretComponentCtor(this.app, el)
-						.setValue(this.plugin.settings.apiKeyOrSecretName)
+						.setValue(opts.value)
 						.onChange(async (value) => {
-							this.plugin.settings.apiKeyOrSecretName = value;
+							opts.onChange(value);
 							await this.plugin.saveSettings();
 						}),
 				);
@@ -92,9 +144,9 @@ export class ObsidipiSettingTab extends PluginSettingTab {
 				.addText((text) =>
 					text
 						.setPlaceholder("Paste key")
-						.setValue(this.plugin.settings.apiKeyOrSecretName)
+						.setValue(opts.value)
 						.onChange(async (value) => {
-							this.plugin.settings.apiKeyOrSecretName = value.trim();
+							opts.onChange(value.trim());
 							await this.plugin.saveSettings();
 						}),
 				);
@@ -111,4 +163,18 @@ export function resolveApiKey(app: App, settings: ObsidipiSettings): string | nu
 	if (!settings.apiKeyOrSecretName) return null;
 	if (!app.secretStorage) return settings.apiKeyOrSecretName;
 	return app.secretStorage.getSecret(settings.apiKeyOrSecretName);
+}
+
+// Same secretStorage contract as resolveApiKey, but for the web-search
+// provider's separate key. Returns null if web search is off OR the user
+// hasn't entered a key yet — the tool surfaces the latter as an error the
+// model can relay to the user.
+export function resolveWebSearchApiKey(
+	app: App,
+	settings: ObsidipiSettings,
+): string | null {
+	if (settings.webSearchProvider === "off") return null;
+	if (!settings.webSearchApiKeyOrSecretName) return null;
+	if (!app.secretStorage) return settings.webSearchApiKeyOrSecretName;
+	return app.secretStorage.getSecret(settings.webSearchApiKeyOrSecretName);
 }

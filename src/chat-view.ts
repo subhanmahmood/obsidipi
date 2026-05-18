@@ -1416,6 +1416,17 @@ function summarizeToolResult(toolName: string, result: unknown): string {
 			return `"${d.query}" — ${n} match${n === 1 ? "" : "es"}${scope}`;
 		}
 	}
+	if (toolName === "web_search") {
+		if ("query" in details && "provider" in details && "results" in details) {
+			const d = details as {
+				query: string;
+				provider: string;
+				results: unknown[];
+			};
+			const n = d.results.length;
+			return `"${d.query}" — ${n} result${n === 1 ? "" : "s"} via ${d.provider}`;
+		}
+	}
 	if (toolName === "list_folder") {
 		if ("path" in details && "count" in details) {
 			const d = details as { path: string; count: number };
